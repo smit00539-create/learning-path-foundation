@@ -23,6 +23,7 @@ import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authen
 import { Route as AuthenticatedParentHistoryRouteImport } from './routes/_authenticated/parent/history'
 import { Route as AuthenticatedParentProgressRouteImport } from './routes/_authenticated/parent/progress'
 import { Route as AuthenticatedParentTodayRouteImport } from './routes/_authenticated/parent/today'
+import { Route as AuthenticatedAdminCurriculumToyIdRouteImport } from './routes/_authenticated/admin/curriculum.$toyId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -103,6 +104,12 @@ const AuthenticatedParentTodayRoute =
     path: '/today',
     getParentRoute: () => AuthenticatedParentRouteRoute,
   } as any)
+const AuthenticatedAdminCurriculumToyIdRoute =
+  AuthenticatedAdminCurriculumToyIdRouteImport.update({
+    id: '/$toyId',
+    path: '/$toyId',
+    getParentRoute: () => AuthenticatedAdminCurriculumRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,7 +117,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteRouteWithChildren
   '/admin/batches': typeof AuthenticatedAdminBatchesRoute
-  '/admin/curriculum': typeof AuthenticatedAdminCurriculumRoute
+  '/admin/curriculum': typeof AuthenticatedAdminCurriculumRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/parent/history': typeof AuthenticatedParentHistoryRoute
   '/parent/progress': typeof AuthenticatedParentProgressRoute
   '/parent/today': typeof AuthenticatedParentTodayRoute
+  '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,7 +133,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/parent': typeof AuthenticatedParentRouteRouteWithChildren
   '/admin/batches': typeof AuthenticatedAdminBatchesRoute
-  '/admin/curriculum': typeof AuthenticatedAdminCurriculumRoute
+  '/admin/curriculum': typeof AuthenticatedAdminCurriculumRouteWithChildren
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/sessions': typeof AuthenticatedAdminSessionsRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/parent/history': typeof AuthenticatedParentHistoryRoute
   '/parent/progress': typeof AuthenticatedParentProgressRoute
   '/parent/today': typeof AuthenticatedParentTodayRoute
+  '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,7 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/parent': typeof AuthenticatedParentRouteRouteWithChildren
   '/_authenticated/admin/batches': typeof AuthenticatedAdminBatchesRoute
-  '/_authenticated/admin/curriculum': typeof AuthenticatedAdminCurriculumRoute
+  '/_authenticated/admin/curriculum': typeof AuthenticatedAdminCurriculumRouteWithChildren
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/sessions': typeof AuthenticatedAdminSessionsRoute
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/history': typeof AuthenticatedParentHistoryRoute
   '/_authenticated/parent/progress': typeof AuthenticatedParentProgressRoute
   '/_authenticated/parent/today': typeof AuthenticatedParentTodayRoute
+  '/_authenticated/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/parent/history'
     | '/parent/progress'
     | '/parent/today'
+    | '/admin/curriculum/$toyId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/parent/history'
     | '/parent/progress'
     | '/parent/today'
+    | '/admin/curriculum/$toyId'
   id:
     | '__root__'
     | '/'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/history'
     | '/_authenticated/parent/progress'
     | '/_authenticated/parent/today'
+    | '/_authenticated/admin/curriculum/$toyId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -306,12 +319,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParentTodayRouteImport
       parentRoute: typeof AuthenticatedParentRouteRoute
     }
+    '/_authenticated/admin/curriculum/$toyId': {
+      id: '/_authenticated/admin/curriculum/$toyId'
+      path: '/$toyId'
+      fullPath: '/admin/curriculum/$toyId'
+      preLoaderRoute: typeof AuthenticatedAdminCurriculumToyIdRouteImport
+      parentRoute: typeof AuthenticatedAdminCurriculumRoute
+    }
   }
 }
 
+interface AuthenticatedAdminCurriculumRouteChildren {
+  AuthenticatedAdminCurriculumToyIdRoute: typeof AuthenticatedAdminCurriculumToyIdRoute
+}
+
+const AuthenticatedAdminCurriculumRouteChildren: AuthenticatedAdminCurriculumRouteChildren =
+  {
+    AuthenticatedAdminCurriculumToyIdRoute:
+      AuthenticatedAdminCurriculumToyIdRoute,
+  }
+
+const AuthenticatedAdminCurriculumRouteWithChildren =
+  AuthenticatedAdminCurriculumRoute._addFileChildren(
+    AuthenticatedAdminCurriculumRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminBatchesRoute: typeof AuthenticatedAdminBatchesRoute
-  AuthenticatedAdminCurriculumRoute: typeof AuthenticatedAdminCurriculumRoute
+  AuthenticatedAdminCurriculumRoute: typeof AuthenticatedAdminCurriculumRouteWithChildren
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminSessionsRoute: typeof AuthenticatedAdminSessionsRoute
@@ -321,7 +356,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminBatchesRoute: AuthenticatedAdminBatchesRoute,
-    AuthenticatedAdminCurriculumRoute: AuthenticatedAdminCurriculumRoute,
+    AuthenticatedAdminCurriculumRoute:
+      AuthenticatedAdminCurriculumRouteWithChildren,
     AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
     AuthenticatedAdminSessionsRoute: AuthenticatedAdminSessionsRoute,
