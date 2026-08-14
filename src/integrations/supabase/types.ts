@@ -14,6 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
+      batches: {
+        Row: {
+          center_location: string | null
+          created_at: string
+          id: string
+          instructor_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          center_location?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          center_location?: string | null
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          subject_id: string
+          total_pages: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          subject_id: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          subject_id?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      children: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          dob: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          dob?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          dob?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "children_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "children_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_questions: {
+        Row: {
+          created_at: string
+          id: string
+          page_id: string
+          question_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_id: string
+          question_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_id?: string
+          question_text?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_questions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          page_number: number
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          page_number: number
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          page_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -37,6 +222,74 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          toy_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          toy_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          toy_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_toy_id_fkey"
+            columns: ["toy_id"]
+            isOneToOne: false
+            referencedRelation: "toys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toys: {
+        Row: {
+          age_range: string | null
+          brand: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          age_range?: string | null
+          brand?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          age_range?: string | null
+          brand?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
