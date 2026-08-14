@@ -24,6 +24,7 @@ import { Route as AuthenticatedParentHistoryRouteImport } from './routes/_authen
 import { Route as AuthenticatedParentProgressRouteImport } from './routes/_authenticated/parent/progress'
 import { Route as AuthenticatedParentTodayRouteImport } from './routes/_authenticated/parent/today'
 import { Route as AuthenticatedAdminCurriculumToyIdRouteImport } from './routes/_authenticated/admin/curriculum.$toyId'
+import { Route as AuthenticatedAdminCurriculumBookBookIdRouteImport } from './routes/_authenticated/admin/curriculum.book.$bookId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -110,6 +111,12 @@ const AuthenticatedAdminCurriculumToyIdRoute =
     path: '/$toyId',
     getParentRoute: () => AuthenticatedAdminCurriculumRoute,
   } as any)
+const AuthenticatedAdminCurriculumBookBookIdRoute =
+  AuthenticatedAdminCurriculumBookBookIdRouteImport.update({
+    id: '/book/$bookId',
+    path: '/book/$bookId',
+    getParentRoute: () => AuthenticatedAdminCurriculumRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/parent/progress': typeof AuthenticatedParentProgressRoute
   '/parent/today': typeof AuthenticatedParentTodayRoute
   '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
+  '/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/parent/progress': typeof AuthenticatedParentProgressRoute
   '/parent/today': typeof AuthenticatedParentTodayRoute
   '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
+  '/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/progress': typeof AuthenticatedParentProgressRoute
   '/_authenticated/parent/today': typeof AuthenticatedParentTodayRoute
   '/_authenticated/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
+  '/_authenticated/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/parent/progress'
     | '/parent/today'
     | '/admin/curriculum/$toyId'
+    | '/admin/curriculum/book/$bookId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/parent/progress'
     | '/parent/today'
     | '/admin/curriculum/$toyId'
+    | '/admin/curriculum/book/$bookId'
   id:
     | '__root__'
     | '/'
@@ -211,6 +223,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/progress'
     | '/_authenticated/parent/today'
     | '/_authenticated/admin/curriculum/$toyId'
+    | '/_authenticated/admin/curriculum/book/$bookId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -326,17 +339,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCurriculumToyIdRouteImport
       parentRoute: typeof AuthenticatedAdminCurriculumRoute
     }
+    '/_authenticated/admin/curriculum/book/$bookId': {
+      id: '/_authenticated/admin/curriculum/book/$bookId'
+      path: '/book/$bookId'
+      fullPath: '/admin/curriculum/book/$bookId'
+      preLoaderRoute: typeof AuthenticatedAdminCurriculumBookBookIdRouteImport
+      parentRoute: typeof AuthenticatedAdminCurriculumRoute
+    }
   }
 }
 
 interface AuthenticatedAdminCurriculumRouteChildren {
   AuthenticatedAdminCurriculumToyIdRoute: typeof AuthenticatedAdminCurriculumToyIdRoute
+  AuthenticatedAdminCurriculumBookBookIdRoute: typeof AuthenticatedAdminCurriculumBookBookIdRoute
 }
 
 const AuthenticatedAdminCurriculumRouteChildren: AuthenticatedAdminCurriculumRouteChildren =
   {
     AuthenticatedAdminCurriculumToyIdRoute:
       AuthenticatedAdminCurriculumToyIdRoute,
+    AuthenticatedAdminCurriculumBookBookIdRoute:
+      AuthenticatedAdminCurriculumBookBookIdRoute,
   }
 
 const AuthenticatedAdminCurriculumRouteWithChildren =
