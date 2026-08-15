@@ -226,6 +226,103 @@ export type Database = {
         }
         Relationships: []
       }
+      session_page_logs: {
+        Row: {
+          child_id: string
+          created_at: string
+          id: string
+          note: string | null
+          page_id: string
+          session_id: string
+          status: Database["public"]["Enums"]["page_status"]
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          page_id: string
+          session_id: string
+          status?: Database["public"]["Enums"]["page_status"]
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          page_id?: string
+          session_id?: string
+          status?: Database["public"]["Enums"]["page_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_page_logs_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_page_logs_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_page_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          instructor_id: string | null
+          session_date: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          session_date?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          instructor_id?: string | null
+          session_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           created_at: string
@@ -309,6 +406,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "instructor" | "parent"
+      page_status: "completed" | "needed_help" | "struggled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -437,6 +535,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "instructor", "parent"],
+      page_status: ["completed", "needed_help", "struggled"],
     },
   },
 } as const
