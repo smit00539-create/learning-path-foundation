@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,13 +25,6 @@ interface Subject {
   id: string;
   name: string;
   sort_order: number;
-}
-interface Book {
-  id: string;
-  subject_id: string;
-  name: string;
-  sort_order: number;
-  total_pages: number;
 }
 
 function ToyDetailPage() {
@@ -68,18 +61,18 @@ function ToyDetailPage() {
   });
 
   const subjectIds = subjects.map((s) => s.id);
-  const { data: books = [] } = useQuery({
-    queryKey: ["books", toyId, subjectIds.join(",")],
+  const { data: bookCounts = {} } = useQuery({
+    queryKey: ["book-counts", toyId, subjectIds.join(",")],
     enabled: subjectIds.length > 0,
     queryFn: async () => {
       const { data, error: e } = await supabase
         .from("books")
-        .select("id, subject_id, name, sort_order, total_pages")
-        .in("subject_id", subjectIds)
-        .order("sort_order")
-        .order("created_at");
+        .select("id, subject_id")
+        .in("subject_id", subjectIds);
       if (e) throw e;
-      return (data ?? []) as Book[];
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) counts[row.subject_id] = (counts[row.subject_id] ?? 0) + 1;
+      return counts;
     },
   });
 
@@ -107,14 +100,25 @@ function ToyDetailPage() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["subjects", toyId] });
-      void qc.invalidateQueries({ queryKey: ["books", toyId] });
+      void qc.invalidateQueries({ queryKey: ["book-counts", toyId] });
     },
     onError: (e: Error) => setError(e.message),
   });
 
-  const invalidateBooks = () => {
-    void qc.invalidateQueries({ queryKey: ["books", toyId] });
-  };
+  const moveSubject = useMutation({
+    mutationFn: async ({ index, direction }: { index: number; direction: -1 | 1 }) => {
+      const target = index + direction;
+      const a = subjects[index];
+      const b = subjects[target];
+      if (!a || !b) return;
+      const { error: e1 } = await supabase.from("subjects").update({ sort_order: target }).eq("id", a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("subjects").update({ sort_order: index }).eq("id", b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["subjects", toyId] }),
+    onError: (e: Error) => setError(e.message),
+  });
 
   return (
     <section className="mx-auto max-w-4xl">
@@ -158,159 +162,56 @@ function ToyDetailPage() {
             No subjects yet. Add one above to start building books.
           </div>
         ) : null}
-        {subjects.map((subject) => (
-          <SubjectCard
-            key={subject.id}
-            subject={subject}
-            books={books.filter((b) => b.subject_id === subject.id)}
-            onChanged={invalidateBooks}
-            onDeleteSubject={() => {
-              if (confirm(`Delete subject "${subject.name}" with all its books?`)) removeSubject.mutate(subject.id);
-            }}
-            onError={setError}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function SubjectCard({
-  subject,
-  books,
-  onChanged,
-  onDeleteSubject,
-  onError,
-}: {
-  subject: Subject;
-  books: Book[];
-  onChanged: () => void;
-  onDeleteSubject: () => void;
-  onError: (message: string) => void;
-}) {
-  const [bookName, setBookName] = useState("");
-  const [count, setCount] = useState("1");
-  const [pages, setPages] = useState("14");
-
-  const addBooks = useMutation({
-    mutationFn: async () => {
-      const howMany = Math.max(1, Math.min(50, Number(count) || 1));
-      const totalPages = Math.max(1, Math.min(200, Number(pages) || 14));
-      const base = bookName.trim() || "Book";
-      const rows = Array.from({ length: howMany }, (_, i) => ({
-        subject_id: subject.id,
-        name: howMany === 1 ? base : `${base} ${books.length + i + 1}`,
-        sort_order: books.length + i,
-        total_pages: totalPages,
-      }));
-      const { error: e } = await supabase.from("books").insert(rows);
-      if (e) throw e;
-    },
-    onSuccess: () => {
-      setBookName("");
-      setCount("1");
-      onChanged();
-    },
-    onError: (e: Error) => onError(e.message),
-  });
-
-  const removeBook = useMutation({
-    mutationFn: async (id: string) => {
-      const { error: e } = await supabase.from("books").delete().eq("id", id);
-      if (e) throw e;
-    },
-    onSuccess: onChanged,
-    onError: (e: Error) => onError(e.message),
-  });
-
-  return (
-    <div className="rounded-2xl border bg-card p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold">{subject.name}</h2>
-          <p className="text-xs text-muted-foreground">{books.length} book(s)</p>
-        </div>
-        <Button variant="ghost" size="icon" aria-label={`Delete ${subject.name}`} onClick={onDeleteSubject}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {books.map((book) => (
-          <div key={book.id} className="flex items-center gap-3 rounded-xl bg-muted/60 px-3 py-2">
+        {subjects.map((subject, index) => (
+          <div key={subject.id} className="flex items-center gap-2 rounded-2xl border bg-card p-4">
+            <div className="flex flex-col">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${subject.name} up`}
+                disabled={index === 0 || moveSubject.isPending}
+                onClick={() => moveSubject.mutate({ index, direction: -1 })}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${subject.name} down`}
+                disabled={index === subjects.length - 1 || moveSubject.isPending}
+                onClick={() => moveSubject.mutate({ index, direction: 1 })}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            </div>
             <Link
-              to="/admin/curriculum/book/$bookId"
-              params={{ bookId: book.id }}
+              to="/admin/curriculum/subject/$subjectId"
+              params={{ subjectId: subject.id }}
               className="min-w-0 flex-1"
             >
-              <p className="truncate text-sm font-semibold">{book.name}</p>
-              <p className="text-xs text-muted-foreground">{book.total_pages} pages</p>
+              <p className="truncate font-semibold">{subject.name}</p>
+              <p className="text-xs text-muted-foreground">{bookCounts[subject.id] ?? 0} book(s)</p>
             </Link>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Delete ${book.name}`}
+              aria-label={`Delete ${subject.name}`}
               onClick={() => {
-                if (confirm(`Delete "${book.name}"?`)) removeBook.mutate(book.id);
+                if (confirm(`Delete subject "${subject.name}" with all its books?`)) removeSubject.mutate(subject.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
             <Link
-              to="/admin/curriculum/book/$bookId"
-              params={{ bookId: book.id }}
-              aria-label={`Open ${book.name}`}
+              to="/admin/curriculum/subject/$subjectId"
+              params={{ subjectId: subject.id }}
+              aria-label={`Open ${subject.name}`}
             >
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </Link>
           </div>
         ))}
       </div>
-
-      <form
-        className="mt-4 grid gap-3 sm:grid-cols-4 sm:items-end"
-        onSubmit={(e) => {
-          e.preventDefault();
-          addBooks.mutate();
-        }}
-      >
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor={`book-name-${subject.id}`}>Book name</Label>
-          <Input
-            id={`book-name-${subject.id}`}
-            value={bookName}
-            onChange={(e) => setBookName(e.target.value)}
-            placeholder="Book"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`book-count-${subject.id}`}>How many?</Label>
-          <Input
-            id={`book-count-${subject.id}`}
-            type="number"
-            min={1}
-            max={50}
-            value={count}
-            onChange={(e) => setCount(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`book-pages-${subject.id}`}>Pages each</Label>
-          <Input
-            id={`book-pages-${subject.id}`}
-            type="number"
-            min={1}
-            max={200}
-            value={pages}
-            onChange={(e) => setPages(e.target.value)}
-          />
-        </div>
-        <div className="sm:col-span-4">
-          <Button type="submit" variant="secondary" disabled={addBooks.isPending}>
-            <Plus className="h-4 w-4" /> Add book(s)
-          </Button>
-        </div>
-      </form>
-    </div>
+    </section>
   );
 }
