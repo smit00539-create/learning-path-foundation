@@ -1,12 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Check, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/curriculum/book/$bookId")({
   head: () => ({
@@ -52,9 +58,6 @@ function BookDetailPage() {
     },
   });
 
-  const [totalPages, setTotalPages] = useState<string>("");
-  const effectiveTotal = totalPages !== "" ? totalPages : String(book?.total_pages ?? 14);
-
   const { data: pages = [] } = useQuery({
     queryKey: ["pages", bookId],
     queryFn: async () => {
@@ -85,40 +88,34 @@ function BookDetailPage() {
 
   const generatePages = useMutation({
     mutationFn: async () => {
-      const total = Math.max(1, Math.min(200, Number(effectiveTotal) || 14));
-      const { error: updateError } = await supabase
-        .from("books")
-        .update({ total_pages: total })
-        .eq("id", bookId);
-      if (updateError) throw updateError;
+      const total = Math.max(1, Math.min(200, book?.total_pages ?? 14));
       const existing = new Set(pages.map((p) => p.page_number));
       const rows = Array.from({ length: total }, (_, i) => i + 1)
         .filter((n) => !existing.has(n))
         .map((n) => ({ book_id: bookId, page_number: n }));
-      if (rows.length > 0) {
-        const { error: e } = await supabase.from("pages").insert(rows);
-        if (e) throw e;
-      }
+      if (rows.length === 0) return;
+      const { error: e } = await supabase.from("pages").insert(rows);
+      if (e) throw e;
     },
     onSuccess: () => {
       setError(null);
       void qc.invalidateQueries({ queryKey: ["pages", bookId] });
-      void qc.invalidateQueries({ queryKey: ["book", bookId] });
     },
     onError: (e: Error) => setError(e.message),
   });
 
-  const toyId = (book?.subjects as { toy_id?: string } | null)?.toy_id;
+  const subject = book?.subjects as { id?: string; name?: string; toy_id?: string } | null;
+  const openPage = pages.find((p) => p.id === openPageId) ?? null;
 
   return (
     <section className="mx-auto max-w-3xl">
-      {toyId ? (
+      {subject?.id ? (
         <Link
-          to="/admin/curriculum/$toyId"
-          params={{ toyId }}
+          to="/admin/curriculum/subject/$subjectId"
+          params={{ subjectId: subject.id }}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to subjects
+          <ArrowLeft className="h-4 w-4" /> Back to books
         </Link>
       ) : (
         <Link to="/admin/curriculum" className="inline-flex items-center gap-2 text-sm text-muted-foreground">
@@ -128,158 +125,156 @@ function BookDetailPage() {
 
       <h1 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">{book?.name ?? "Book"}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {(book?.subjects as { name?: string } | null)?.name ?? "Pages and discussion questions"}
+        {subject?.name ?? "Pages and discussion questions"} · {book?.total_pages ?? 0} pages planned
       </p>
 
-      <form
-        className="mt-6 flex flex-col gap-3 rounded-2xl border bg-card p-5 sm:flex-row sm:items-end"
-        onSubmit={(e) => {
-          e.preventDefault();
-          generatePages.mutate();
-        }}
-      >
-        <div className="space-y-2 sm:w-40">
-          <Label htmlFor="total-pages">Total pages</Label>
-          <Input
-            id="total-pages"
-            type="number"
-            min={1}
-            max={200}
-            value={effectiveTotal}
-            onChange={(e) => setTotalPages(e.target.value)}
-          />
-        </div>
-        <Button type="submit" disabled={generatePages.isPending}>
-          Generate pages
-        </Button>
-        <p className="text-xs text-muted-foreground sm:ml-auto">
-          {pages.length} page(s) created. Existing pages are kept.
-        </p>
-      </form>
-
       {error ? (
-        <p className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
+        <p className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
       ) : null}
 
-      <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-7">
-        {pages.map((page) => {
-          const count = questions.filter((q) => q.page_id === page.id).length;
-          const active = openPageId === page.id;
-          return (
-            <button
-              key={page.id}
-              type="button"
-              onClick={() => setOpenPageId(active ? null : page.id)}
-              className={`rounded-xl border px-2 py-3 text-center transition-colors ${
-                active ? "border-primary bg-primary/10" : "bg-card hover:bg-muted"
-              }`}
-            >
-              <span className="block text-sm font-bold">{page.page_number}</span>
-              <span className={`block text-[11px] ${count > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                {count > 0 ? `${count} Q` : "no Q"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {pages.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
+          <p className="font-semibold">No pages yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create Page 1 to {book?.total_pages ?? 14} from this book&apos;s total pages.
+          </p>
+          <Button className="mt-4" onClick={() => generatePages.mutate()} disabled={generatePages.isPending}>
+            <Sparkles className="h-4 w-4" /> Generate pages
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {pages.length} page(s) ·{" "}
+              {new Set(questions.map((q) => q.page_id)).size} with questions
+            </p>
+            {pages.length < (book?.total_pages ?? 0) ? (
+              <Button variant="secondary" size="sm" onClick={() => generatePages.mutate()}>
+                <Sparkles className="h-4 w-4" /> Add missing pages
+              </Button>
+            ) : null}
+          </div>
 
-      {openPageId ? (
-        <PageQuestions
-          pageId={openPageId}
-          pageNumber={pages.find((p) => p.id === openPageId)?.page_number ?? 0}
-          questions={questions.filter((q) => q.page_id === openPageId)}
-          onChanged={() => void qc.invalidateQueries({ queryKey: ["page_questions", bookId] })}
-          onError={setError}
-        />
-      ) : pages.length > 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">Tap a page to add its discussion questions.</p>
-      ) : null}
+          <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
+            {pages.map((page) => {
+              const count = questions.filter((q) => q.page_id === page.id).length;
+              return (
+                <button
+                  key={page.id}
+                  type="button"
+                  onClick={() => setOpenPageId(page.id)}
+                  className={`relative rounded-xl border px-2 py-3 text-center transition-colors ${
+                    count > 0 ? "border-primary/50 bg-primary/10" : "bg-card hover:bg-muted"
+                  }`}
+                >
+                  {count > 0 ? (
+                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-3 w-3" />
+                    </span>
+                  ) : null}
+                  <span className="block text-sm font-bold">{page.page_number}</span>
+                  <span className={`block text-[11px] ${count > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                    {count > 0 ? `${count} Q` : "no Q"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <Dialog open={openPage !== null} onOpenChange={(open) => !open && setOpenPageId(null)}>
+        <DialogContent>
+          {openPage ? (
+            <QuestionEditor
+              pageId={openPage.id}
+              pageNumber={openPage.page_number}
+              questions={questions.filter((q) => q.page_id === openPage.id)}
+              onSaved={() => {
+                setOpenPageId(null);
+                void qc.invalidateQueries({ queryKey: ["page_questions", bookId] });
+              }}
+              onError={setError}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function PageQuestions({
+function QuestionEditor({
   pageId,
   pageNumber,
   questions,
-  onChanged,
+  onSaved,
   onError,
 }: {
   pageId: string;
   pageNumber: number;
   questions: Question[];
-  onChanged: () => void;
+  onSaved: () => void;
   onError: (message: string) => void;
 }) {
-  const [text, setText] = useState("");
+  const [values, setValues] = useState<string[]>(["", "", ""]);
 
-  const addQuestion = useMutation({
+  useEffect(() => {
+    const sorted = [...questions].sort((a, b) => a.sort_order - b.sort_order);
+    setValues([0, 1, 2].map((i) => sorted[i]?.question_text ?? ""));
+  }, [pageId, questions]);
+
+  const save = useMutation({
     mutationFn: async () => {
-      const { error: e } = await supabase.from("page_questions").insert({
-        page_id: pageId,
-        question_text: text.trim(),
-        sort_order: questions.length,
-      });
-      if (e) throw e;
+      const { error: delErr } = await supabase.from("page_questions").delete().eq("page_id", pageId);
+      if (delErr) throw delErr;
+      const rows = values
+        .map((text, i) => ({ page_id: pageId, question_text: text.trim(), sort_order: i }))
+        .filter((r) => r.question_text.length > 0);
+      if (rows.length > 0) {
+        const { error: e } = await supabase.from("page_questions").insert(rows);
+        if (e) throw e;
+      }
     },
-    onSuccess: () => {
-      setText("");
-      onChanged();
-    },
-    onError: (e: Error) => onError(e.message),
-  });
-
-  const removeQuestion = useMutation({
-    mutationFn: async (id: string) => {
-      const { error: e } = await supabase.from("page_questions").delete().eq("id", id);
-      if (e) throw e;
-    },
-    onSuccess: onChanged,
+    onSuccess: onSaved,
     onError: (e: Error) => onError(e.message),
   });
 
   return (
-    <div className="mt-6 rounded-2xl border bg-card p-5">
-      <h2 className="text-lg font-bold">Page {pageNumber} — discussion questions</h2>
-      <p className="text-xs text-muted-foreground">Add 1–3 questions. Pages with none fall back to a generic question.</p>
-
-      <ul className="mt-4 space-y-2">
-        {questions.map((q) => (
-          <li key={q.id} className="flex items-start gap-3 rounded-xl bg-muted/60 px-3 py-2">
-            <p className="flex-1 text-sm">{q.question_text}</p>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Delete question"
-              onClick={() => removeQuestion.mutate(q.id)}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </li>
-        ))}
-      </ul>
+    <>
+      <DialogHeader>
+        <DialogTitle>Page {pageNumber} — discussion questions</DialogTitle>
+        <DialogDescription>
+          Question 1 is what parents see first. Questions 2 and 3 are optional.
+        </DialogDescription>
+      </DialogHeader>
 
       <form
-        className="mt-4 space-y-3"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          addQuestion.mutate();
+          save.mutate();
         }}
       >
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="What was the trickiest match on this page?"
-          rows={2}
-          required
-        />
-        <Button type="submit" variant="secondary" disabled={addQuestion.isPending || questions.length >= 3 || !text.trim()}>
-          <Plus className="h-4 w-4" /> Add question
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-2">
+            <Label htmlFor={`q-${i}`}>Question {i + 1}{i > 0 ? " (optional)" : ""}</Label>
+            <Textarea
+              id={`q-${i}`}
+              rows={2}
+              value={values[i] ?? ""}
+              onChange={(e) =>
+                setValues((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+              }
+              placeholder={i === 0 ? "What was the trickiest match on this page?" : ""}
+              required={i === 0}
+            />
+          </div>
+        ))}
+        <Button type="submit" disabled={save.isPending}>
+          Save questions
         </Button>
-        {questions.length >= 3 ? (
-          <p className="text-xs text-muted-foreground">Maximum of 3 questions per page.</p>
-        ) : null}
       </form>
-    </div>
+    </>
   );
 }

@@ -25,6 +25,7 @@ import { Route as AuthenticatedParentProgressRouteImport } from './routes/_authe
 import { Route as AuthenticatedParentTodayRouteImport } from './routes/_authenticated/parent/today'
 import { Route as AuthenticatedAdminCurriculumToyIdRouteImport } from './routes/_authenticated/admin/curriculum.$toyId'
 import { Route as AuthenticatedAdminCurriculumBookBookIdRouteImport } from './routes/_authenticated/admin/curriculum.book.$bookId'
+import { Route as AuthenticatedAdminCurriculumSubjectSubjectIdRouteImport } from './routes/_authenticated/admin/curriculum.subject.$subjectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -117,6 +118,12 @@ const AuthenticatedAdminCurriculumBookBookIdRoute =
     path: '/book/$bookId',
     getParentRoute: () => AuthenticatedAdminCurriculumRoute,
   } as any)
+const AuthenticatedAdminCurriculumSubjectSubjectIdRoute =
+  AuthenticatedAdminCurriculumSubjectSubjectIdRouteImport.update({
+    id: '/subject/$subjectId',
+    path: '/subject/$subjectId',
+    getParentRoute: () => AuthenticatedAdminCurriculumRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/parent/today': typeof AuthenticatedParentTodayRoute
   '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
   '/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
+  '/admin/curriculum/subject/$subjectId': typeof AuthenticatedAdminCurriculumSubjectSubjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/parent/today': typeof AuthenticatedParentTodayRoute
   '/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
   '/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
+  '/admin/curriculum/subject/$subjectId': typeof AuthenticatedAdminCurriculumSubjectSubjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/_authenticated/parent/today': typeof AuthenticatedParentTodayRoute
   '/_authenticated/admin/curriculum/$toyId': typeof AuthenticatedAdminCurriculumToyIdRoute
   '/_authenticated/admin/curriculum/book/$bookId': typeof AuthenticatedAdminCurriculumBookBookIdRoute
+  '/_authenticated/admin/curriculum/subject/$subjectId': typeof AuthenticatedAdminCurriculumSubjectSubjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/parent/today'
     | '/admin/curriculum/$toyId'
     | '/admin/curriculum/book/$bookId'
+    | '/admin/curriculum/subject/$subjectId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/parent/today'
     | '/admin/curriculum/$toyId'
     | '/admin/curriculum/book/$bookId'
+    | '/admin/curriculum/subject/$subjectId'
   id:
     | '__root__'
     | '/'
@@ -224,6 +236,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parent/today'
     | '/_authenticated/admin/curriculum/$toyId'
     | '/_authenticated/admin/curriculum/book/$bookId'
+    | '/_authenticated/admin/curriculum/subject/$subjectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -346,12 +359,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCurriculumBookBookIdRouteImport
       parentRoute: typeof AuthenticatedAdminCurriculumRoute
     }
+    '/_authenticated/admin/curriculum/subject/$subjectId': {
+      id: '/_authenticated/admin/curriculum/subject/$subjectId'
+      path: '/subject/$subjectId'
+      fullPath: '/admin/curriculum/subject/$subjectId'
+      preLoaderRoute: typeof AuthenticatedAdminCurriculumSubjectSubjectIdRouteImport
+      parentRoute: typeof AuthenticatedAdminCurriculumRoute
+    }
   }
 }
 
 interface AuthenticatedAdminCurriculumRouteChildren {
   AuthenticatedAdminCurriculumToyIdRoute: typeof AuthenticatedAdminCurriculumToyIdRoute
   AuthenticatedAdminCurriculumBookBookIdRoute: typeof AuthenticatedAdminCurriculumBookBookIdRoute
+  AuthenticatedAdminCurriculumSubjectSubjectIdRoute: typeof AuthenticatedAdminCurriculumSubjectSubjectIdRoute
 }
 
 const AuthenticatedAdminCurriculumRouteChildren: AuthenticatedAdminCurriculumRouteChildren =
@@ -360,6 +381,8 @@ const AuthenticatedAdminCurriculumRouteChildren: AuthenticatedAdminCurriculumRou
       AuthenticatedAdminCurriculumToyIdRoute,
     AuthenticatedAdminCurriculumBookBookIdRoute:
       AuthenticatedAdminCurriculumBookBookIdRoute,
+    AuthenticatedAdminCurriculumSubjectSubjectIdRoute:
+      AuthenticatedAdminCurriculumSubjectSubjectIdRoute,
   }
 
 const AuthenticatedAdminCurriculumRouteWithChildren =
